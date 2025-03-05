@@ -1,39 +1,28 @@
-from django.shortcuts import get_object_or_404
 from rest_framework import viewsets
-from rest_framework.decorators import action
-from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
+from api.models import ApiUser, Warehouse, Product, Transaction
+from api.serializers import UserSerializer, WarehouseSerializer, ProductSerializer, TransactionSerializer
 
-from api.models import ApiUser, Hotel, Room, Booking
-from api.serializers import UserSerializer, HotelSerializer, RoomSerializer, BookingSerializer
-
-
-# Create your views here.
 class UserModelViewSet(viewsets.ModelViewSet):
     queryset = ApiUser.objects.all()
-    http_method_names = ['post', 'path', 'get']
     serializer_class = UserSerializer
-
     authentication_classes = []
     permission_classes = []
 
+class WarehouseModelViewSet(viewsets.ModelViewSet):
+    queryset = Warehouse.objects.all()
+    serializer_class = WarehouseSerializer
+    permission_classes = [IsAuthenticated]
 
-class HotelModelViewSet(viewsets.ModelViewSet):
-    queryset = Hotel.objects.all()
-    serializer_class = HotelSerializer
+class ProductModelViewSet(viewsets.ModelViewSet):
+    queryset = Product.objects.all()
+    serializer_class = ProductSerializer
+    permission_classes = [IsAuthenticated]
 
-    @action(detail=True)
-    def rooms(self, request, pk=None):
-        hotel = get_object_or_404(Hotel.objects.all(), id=pk)
-        free_rooms = hotel.rooms.filter(bookings__insull=True)
-        return Response(
-            RoomSerializer(free_rooms, many=True).data
-        )
+class TransactionModelViewSet(viewsets.ModelViewSet):
+    queryset = Transaction.objects.all()
+    serializer_class = TransactionSerializer
+    permission_classes = [IsAuthenticated]
 
-
-class RoomModelViewSet(viewsets.ModelViewSet):
-    queryset = Room.objects.all()
-    serializer_class = RoomSerializer
-
-class BookingModelViewSet(viewsets.ModelViewSet):
-    queryset = Booking.objects.all()
-    serializer_class = BookingSerializer
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
